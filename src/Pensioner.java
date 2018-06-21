@@ -9,6 +9,11 @@ class Pensioner extends Person {
         this.pension = pension;
     }
 
+    @Override
+    public String toString() {
+        return "Name: "+getName()+" | Phone: "+getPhone()+" | Pension: "+getPension();
+    }
+
     Pensioner(String name, String phone, double pension){
         super(name, phone);
         this.pension = pension;

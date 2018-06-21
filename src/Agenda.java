@@ -4,7 +4,6 @@ import java.util.Scanner;
 import java.util.Set;
 
 public class Agenda {
-    private static final int MAX = 5;
     private static final int EXIT = 6;
     private static Set<Person> users = new HashSet<>();
 
@@ -71,15 +70,7 @@ public class Agenda {
 
         for (Person u : users) {
             if (u != null) {
-                if (u instanceof Person && !(u instanceof Student) && !(u instanceof Pensioner)) {
-                    System.out.println(u.getName() + " " + u.getPhone() + " ");
-                }
-                if (u instanceof Student) {
-                    System.out.println(u.getName() + " " + u.getPhone() + " " + ((Student) u).getYear());
-                }
-                if (u instanceof Pensioner) {
-                    System.out.println(u.getName() + " " + u.getPhone() + " " + ((Pensioner) u).getPension());
-                }
+                System.out.println(u.toString());
             }
         }
     }
@@ -89,17 +80,18 @@ public class Agenda {
         System.out.print("Type the phone number or name that you want to find: ");
         String searchFor = input.nextLine().toLowerCase();
         boolean found = false;
-        int i = -1;
+        int temp = 0;
 
         for (Person u : users) {
-            i++;
+            temp++;
             if (u == null) {
                 continue;
             } else if (u.getName().toLowerCase().contains(searchFor)) {
-                System.out.println("The contact name has been fount at the index: " + i + ". " + u.getName());
+                System.out.println("The contact name has been fount at the index: " + temp + ". " + u.getName());
                 found = true;
             } else if (u.getPhone().contains(searchFor)) {
-                System.out.println("The phone number has been found at the index: " + i + ". " + u.getPhone());
+                System.out.println("The phone number has been found at the index: " + temp + ". " + u.getPhone());
+                found = true;
             }
         }
         if (!found) {
@@ -127,34 +119,30 @@ public class Agenda {
             int counter = 0;
             Person u = null;
 
-            for (int i = 0; i <= MAX; i++) {
+            for (int i = 0; i <= users.size(); i++) {
                 for (Person k : users) {
                     counter++;
                 }
-                if (counter < MAX) {
+                if (counter < users.size()) {
                     switch (nr) {
                         case 1:
                             u = new Person(name, phone);
                             break;
                         case 2:
                             u = new Student(name, phone, yearM);
+                            System.out.print("Type the year of the student: ");
+                            yearM = input.nextInt();
+                            ((Student) u).setYear(yearM);
                             break;
                         case 3:
                             u = new Pensioner(name, phone, pensionM);
+                            System.out.print("Type the pension of the pensioner: ");
+                            pensionM = input.nextDouble();
+                            ((Pensioner) u).setPension(pensionM);
                             break;
                         default:
                             System.out.println("Index out of bounds.");
                             break;
-                    }
-                    if (nr == 2) {
-                        System.out.print("Type the year of the student: ");
-                        yearM = input.nextInt();
-                        ((Student) u).setYear(yearM);
-                    } else if (nr == 3) {
-                        System.out.print("Type the pension of the pensioner: ");
-                        pensionM = input.nextDouble();
-                        ((Pensioner) u).setPension(pensionM);
-
                     }
                     users.add(u);
                     full = true;
@@ -162,7 +150,7 @@ public class Agenda {
                 }
             }
 
-            if (!full) System.out.println("I'm sorry, the agenda is already full..");
+            if (!full) System.out.println("I'm sorry, the agenda is full..");
         } catch (NullPointerException e) {
             System.out.println("There was an error. Retrying...");
             add();
@@ -173,30 +161,32 @@ public class Agenda {
         Scanner input = new Scanner(System.in);
         System.out.print("Type the appropriate index of the name or phone number you want to modify. Or type '-1' to go back to the menu. ");
         int index = input.nextInt();
-        int temp = -1;
+        int temp = 0;
 
-        if (index >= MAX) {
+        if (index >= users.size()) {
             System.out.println("You have exceeded the size of the agenda.");
             modify();
-        } else if (index >= 0 && index < MAX) {
+        } else if (index >= 0 && index < users.size()) {
             for (Person u : users) {
                 temp++;
                 if (temp == index) {
 
-                    System.out.print("Type the new name of the contact: ");
+                    System.out.print("Type the new name of the contact or type -1 to leave it as it is: ");
                     String name = input.next();
-                    u.setName(name);
-                    System.out.print("Type the new phone number of the contact: ");
+                    if(!name.contains("-1")) { u.setName(name); }
+
+                    System.out.print("Type the new phone number of the contact or type -1 to leave it as it is: ");
                     String phone = input.next();
-                    u.setPhone(phone);
+                    if(!name.contains("-1")) {u.setPhone(phone);}
+
                     if (u instanceof Student) {
-                        System.out.print("Type the new year of the student: ");
+                        System.out.print("Type the new year of the student or type -1 to leave it as it is: ");
                         int yearM = input.nextInt();
-                        ((Student) u).setYear(yearM);
+                        if(yearM != -1) {((Student) u).setYear(yearM);}
                     } else if (u instanceof Pensioner) {
-                        System.out.print("Type the new pension of the student: ");
+                        System.out.print("Type the new pension of the pensioner or type -1 to leave it as it is: ");
                         double pensionM = input.nextDouble();
-                        ((Pensioner) u).setPension(pensionM);
+                        if(pensionM != -1) {((Pensioner) u).setPension(pensionM);}
                     }
                     System.out.println("The contact has been modified.");
                 }
