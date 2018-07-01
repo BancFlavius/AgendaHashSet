@@ -7,7 +7,7 @@ public class Student extends Person {
 
     @Override
     public String toString() {
-        return "Name: "+getName()+" | Phone: "+getPhone()+" | Year: "+getYear();
+        return "Name: "+getName()+" | Phone: "+getPhone()+" | Year: "+getYear()+" |";
     }
 
     public int getYear() {

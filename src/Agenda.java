@@ -1,3 +1,4 @@
+import java.io.*;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.Scanner;
@@ -7,15 +8,21 @@ public class Agenda {
     private static final int EXIT = 6;
     private static Set<Person> users = new HashSet<>();
 
-    public static void main(String[] args) throws NullPointerException, ConcurrentModificationException {
+    public static void main(String[] args) throws NullPointerException, ConcurrentModificationException, IOException, FileNotFoundException {
 
-        Person u1 = new Person("user1", "09231231");
-        Person u2 = new Student("Mihai", "019231231", 2);
-        Person u3 = new Pensioner("user3", "parola123", 123153.213);
-
-        users.add(u1);
-        users.add(u2);
-        users.add(u3);
+//        Person u1 = new Person("user1", "09231231");
+//        Person u2 = new Student("Mihai", "019231231", 2);
+//        Person u3 = new Pensioner("user3", "parola123", 123153.213);
+//
+//        users.add(u1);
+//        users.add(u2);
+//        users.add(u3);
+        try {
+            File f = new File("database.txt");
+            updateFromDatabase(f);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         Scanner input = new Scanner(System.in);
         int optiune;
 
@@ -68,10 +75,11 @@ public class Agenda {
     static void display() {
         System.out.println("--------------------------------------------------");
 
-        for (Person u : users) {
-            if (u != null) {
-                System.out.println(u.toString());
-            }
+        File f = new File("database.txt");
+        try {
+            read(f);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -115,16 +123,10 @@ public class Agenda {
 
             int yearM = 0;
             double pensionM = 0;
-            boolean full = false;
-            int counter = 0;
             Person u = null;
 
-            for (int i = 0; i <= users.size(); i++) {
-                for (Person k : users) {
-                    counter++;
-                }
-                if (counter < users.size()) {
-                    switch (nr) {
+
+            switch (nr) {
                         case 1:
                             u = new Person(name, phone);
                             break;
@@ -143,16 +145,17 @@ public class Agenda {
                         default:
                             System.out.println("Index out of bounds.");
                             break;
-                    }
-                    users.add(u);
-                    full = true;
-                    break;
-                }
+            }
+            users.add(u);
+            try{
+                File f = new File("database.txt");
+                        write("\r\n"+u.toString(), f);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
-            if (!full) System.out.println("I'm sorry, the agenda is full..");
         } catch (NullPointerException e) {
-            System.out.println("There was an error. Retrying...");
+            System.err.println("There was an error. Retrying...");
             add();
         }
     }
@@ -163,39 +166,44 @@ public class Agenda {
         int index = input.nextInt();
         int temp = 0;
 
-        if (index >= users.size()) {
-            System.out.println("You have exceeded the size of the agenda.");
-            modify();
-        } else if (index >= 0 && index < users.size()) {
+        if (index == -1) {
+        }else {
             for (Person u : users) {
                 temp++;
                 if (temp == index) {
 
                     System.out.print("Type the new name of the contact or type -1 to leave it as it is: ");
                     String name = input.next();
-                    if(!name.contains("-1")) { u.setName(name); }
+                    if (!name.contains("-1")) {
+                        u.setName(name);
+                    }
 
                     System.out.print("Type the new phone number of the contact or type -1 to leave it as it is: ");
                     String phone = input.next();
-                    if(!name.contains("-1")) {u.setPhone(phone);}
+                    if (!phone.contains("-1")) {
+                        u.setPhone(phone);
+                    }
 
                     if (u instanceof Student) {
                         System.out.print("Type the new year of the student or type -1 to leave it as it is: ");
                         int yearM = input.nextInt();
-                        if(yearM != -1) {((Student) u).setYear(yearM);}
+                        if (yearM != -1) {
+                            ((Student) u).setYear(yearM);
+                        }
                     } else if (u instanceof Pensioner) {
                         System.out.print("Type the new pension of the pensioner or type -1 to leave it as it is: ");
                         double pensionM = input.nextDouble();
-                        if(pensionM != -1) {((Pensioner) u).setPension(pensionM);}
+                        if (pensionM != -1) {
+                            ((Pensioner) u).setPension(pensionM);
+                        }
                     }
                     System.out.println("The contact has been modified.");
                 }
             }
-        } else if (index == -1) {
         }
     }
 
-    static void delete() throws ConcurrentModificationException {
+    static void delete() throws ConcurrentModificationException, IOException, FileNotFoundException {
         Scanner input = new Scanner(System.in);
         System.out.print("Enter the appropriate index of the contact you want to delete. If you want to go back to the menu, type '-1'. ");
         int index = input.nextInt();
@@ -210,6 +218,30 @@ public class Agenda {
                         if (u == null) {
                             System.out.println("Index value selected already has the value 'null'.");
                         } else {
+                            File inputFile = new File("database.txt");
+                            File tempfile = new File("database_tmp.txt");
+                            BufferedReader br = new BufferedReader(new FileReader(inputFile));
+                            BufferedWriter bw = new BufferedWriter(new FileWriter(tempfile));
+                            String line;
+                            String lineToRemove = u.toString();
+                            System.out.println(u.toString());
+                            while((line = br.readLine()) != null){
+                                if(line.contains(lineToRemove)){
+                                    continue;
+                                }
+                                bw.write(line+"\r\n");
+                            }
+
+                            bw.close();
+                            br.close();
+
+                            boolean success = tempfile.renameTo(inputFile);
+                            if(inputFile.delete() && success){
+                                System.out.println(inputFile.getName() + " is renamed and deleted.");
+                            } else {
+                                System.out.println("Operation failed.");
+                            }
+
                             users.remove(u);
                             System.out.println("Contact deleted.");
                         }
@@ -219,6 +251,72 @@ public class Agenda {
 
             }
         }
+    }
+
+    private static void updateFromDatabase(File f) throws IOException, NullPointerException{
+
+        FileReader fr = new FileReader(f);
+        BufferedReader br = new BufferedReader(fr);
+
+        String str;
+        String name;
+        String phone="12312";
+        String year="123";
+        String pension="123";
+        int temp=1;
+
+        while((str = br.readLine()) != null){
+
+            String[] part1 = str.split(":");
+            name = part1[1].substring(0, part1[1].indexOf("|")).trim();
+            phone = part1[2].substring(0, part1[2].lastIndexOf("|")).trim();
+
+            if(str.contains("Year") || str.contains("Pension")){
+                year = part1[3].substring(0, part1[3].lastIndexOf("|")).trim();
+                pension = part1[3].substring(0, part1[3].lastIndexOf("|")).trim();
+            }
+
+            if(str.contains("Year")){
+                temp = 2;
+            } else if(str.contains("Pension")){
+                temp = 3;
+            }
+
+            Person u = null;
+            switch (temp) {
+                case 1:
+                    u = new Person(name, phone);
+                    break;
+                case 2:
+                    u = new Student(name, phone, Integer.parseInt(year));
+                    break;
+                case 3:
+                    u = new Pensioner(name, phone, Double.parseDouble(pension));
+                    break;
+                default:
+                    break;
+            }
+            users.add(u);
+        }
+
+    }
+
+    static void write(String s, File f) throws IOException{
+        FileWriter fw = new FileWriter(f, true);
+        fw.write(s);
+        fw.close();
+    }
+
+    static void read(File f) throws IOException{
+            FileReader fr = new FileReader(f);
+            BufferedReader br = new BufferedReader(fr);
+
+            String str;
+            while((str = br.readLine()) != null){
+                System.out.println(str );
+            }
+            br.close();
+
     }
 }
 

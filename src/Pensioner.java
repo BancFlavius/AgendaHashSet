@@ -11,7 +11,7 @@ class Pensioner extends Person {
 
     @Override
     public String toString() {
-        return "Name: "+getName()+" | Phone: "+getPhone()+" | Pension: "+getPension();
+        return "Name: "+getName()+" | Phone: "+getPhone()+" | Pension: "+getPension() +" |";
     }
 
     Pensioner(String name, String phone, double pension){

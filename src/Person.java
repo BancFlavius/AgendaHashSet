@@ -32,7 +32,7 @@ public class Person {
 
     @Override
     public String toString() {
-        return "Name: "+getName()+" | Phone: "+getPhone();
+        return "Name: "+getName()+" | Phone: "+getPhone()+" |";
     }
 
     @Override
