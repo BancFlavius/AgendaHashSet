@@ -1,12 +1,9 @@
 import java.io.*;
-import java.util.ConcurrentModificationException;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 public class Agenda {
     private static final int EXIT = 6;
-    private static Set<Person> users = new HashSet<>();
+    private static Set<Person> users = new LinkedHashSet<>();
 
     public static void main(String[] args) throws NullPointerException, ConcurrentModificationException, IOException, FileNotFoundException {
 
@@ -72,18 +69,24 @@ public class Agenda {
         System.out.println("6. EXIT");
     }
 
-    static void display() {
-        System.out.println("--------------------------------------------------");
-
+    static void display() throws IOException {
         File f = new File("database.txt");
-        try {
+        updateFromDatabase(f);
+        System.out.println("--------------------------------------------------");
             read(f);
-        } catch (IOException e) {
-            e.printStackTrace();
+
+            //debug feature
+        System.out.println("users in database.txt ^^^");
+        System.out.println("separator");
+        System.out.println("users inside LinkedHashSet vvv");
+        for(Person u: users){
+            System.out.println(u.toString());
         }
     }
 
-    static void search() {
+    static void search() throws IOException{
+        File f = new File("database.txt");
+            updateFromDatabase(f);
         Scanner input = new Scanner(System.in);
         System.out.print("Type the phone number or name that you want to find: ");
         String searchFor = input.nextLine().toLowerCase();
@@ -107,7 +110,9 @@ public class Agenda {
         }
     }
 
-    static void add() {
+    static void add() throws IOException{
+        File f = new File("database.txt");
+            updateFromDatabase(f);
         Scanner input = new Scanner(System.in);
         System.out.print("What type of contact would you like to add? " +
                 "1.Person - " +
@@ -148,8 +153,8 @@ public class Agenda {
             }
             users.add(u);
             try{
-                File f = new File("database.txt");
-                        write("\r\n"+u.toString(), f);
+                BufferedReader br = new BufferedReader(new FileReader(f));
+                        write(u.toString(), f);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -160,18 +165,22 @@ public class Agenda {
         }
     }
 
-    static void modify() {
+    static void modify() throws IOException {
+        File f = new File("database.txt");
+            updateFromDatabase(f);
+
         Scanner input = new Scanner(System.in);
         System.out.print("Type the appropriate index of the name or phone number you want to modify. Or type '-1' to go back to the menu. ");
         int index = input.nextInt();
         int temp = 0;
 
         if (index == -1) {
-        }else {
+        } else {
             for (Person u : users) {
                 temp++;
                 if (temp == index) {
-
+                    String lineToModify = u.toString();
+                    System.out.println("user to modify "+u.toString());
                     System.out.print("Type the new name of the contact or type -1 to leave it as it is: ");
                     String name = input.next();
                     if (!name.contains("-1")) {
@@ -197,13 +206,36 @@ public class Agenda {
                             ((Pensioner) u).setPension(pensionM);
                         }
                     }
-                    System.out.println("The contact has been modified.");
+                    File inputFile = new File("database.txt");
+                    File tempfile = new File("database_tmp.txt");
+                    BufferedReader br = new BufferedReader(new FileReader(inputFile));
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(tempfile));
+                    String line;
+                    while((line = br.readLine()) != null){
+                        if(!line.contains(lineToModify)){ bw.write(line+"\r\n"); }
+                        else { bw.write(u.toString()+"\r\n"); }
+                    }
+
+                    bw.close();
+                    br.close();
+
+                    boolean delete = inputFile.delete();
+                    boolean success = tempfile.renameTo(inputFile);
+                    if(delete && success){
+                        System.out.println("The contact has been modified.");
+                        break;
+                    } else {
+                        System.out.println("Operation failed.");
+                    }
+
                 }
             }
         }
     }
 
-    static void delete() throws ConcurrentModificationException, IOException, FileNotFoundException {
+    static void delete() throws ConcurrentModificationException, IOException {
+        File f = new File("database.txt");
+        updateFromDatabase(f);
         Scanner input = new Scanner(System.in);
         System.out.print("Enter the appropriate index of the contact you want to delete. If you want to go back to the menu, type '-1'. ");
         int index = input.nextInt();
@@ -224,26 +256,24 @@ public class Agenda {
                             BufferedWriter bw = new BufferedWriter(new FileWriter(tempfile));
                             String line;
                             String lineToRemove = u.toString();
-                            System.out.println(u.toString());
                             while((line = br.readLine()) != null){
-                                if(line.contains(lineToRemove)){
-                                    continue;
-                                }
-                                bw.write(line+"\r\n");
+                                if(!line.contains(lineToRemove)){ bw.write(line+"\r\n"); }
+                                else { continue; }
                             }
 
                             bw.close();
                             br.close();
 
+                            boolean delete = inputFile.delete();
                             boolean success = tempfile.renameTo(inputFile);
-                            if(inputFile.delete() && success){
-                                System.out.println(inputFile.getName() + " is renamed and deleted.");
+                            if(delete && success){
+                                users.remove(u);
+                                System.out.println("Contact deleted.");
                             } else {
                                 System.out.println("Operation failed.");
                             }
 
-                            users.remove(u);
-                            System.out.println("Contact deleted.");
+
                         }
                     }
                 }
@@ -260,9 +290,9 @@ public class Agenda {
 
         String str;
         String name;
-        String phone="12312";
-        String year="123";
-        String pension="123";
+        String phone="0";
+        String year="0";
+        String pension="0";
         int temp=1;
 
         while((str = br.readLine()) != null){
@@ -271,15 +301,14 @@ public class Agenda {
             name = part1[1].substring(0, part1[1].indexOf("|")).trim();
             phone = part1[2].substring(0, part1[2].lastIndexOf("|")).trim();
 
-            if(str.contains("Year") || str.contains("Pension")){
-                year = part1[3].substring(0, part1[3].lastIndexOf("|")).trim();
-                pension = part1[3].substring(0, part1[3].lastIndexOf("|")).trim();
-            }
-
             if(str.contains("Year")){
                 temp = 2;
+                year = part1[3].substring(0, part1[3].lastIndexOf("|")).trim();
             } else if(str.contains("Pension")){
                 temp = 3;
+                pension = part1[3].substring(0, part1[3].lastIndexOf("|")).trim();
+            } else{
+                temp = 1;
             }
 
             Person u = null;
@@ -298,7 +327,7 @@ public class Agenda {
             }
             users.add(u);
         }
-
+        br.close();
     }
 
     static void write(String s, File f) throws IOException{
